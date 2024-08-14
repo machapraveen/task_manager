@@ -6,21 +6,19 @@ import pandas as pd
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
 from email import encoders
-
 
 names = ['Rohitha', 'Chinnodu', 'Junia', 'Swathi']
 
-
 courses = {
     'AWS': {'classes': 18, 'link': 'https://learn.internshipstudio.com/learn/home/aws/section/307634/lesson/1875569'},
-    'Data Scientist': {'classes': 300, 'link': None},  # ee course start cheysa ka link pedudham
+    'Data Scientist': {'classes': 300, 'link': None},
     'DevOps': {'classes': 25, 'link': 'https://learn.internshipstudio.com/learn/home/DevOps/section/471668/lesson/2960749'},
-    'Data Structures': {'classes': 28, 'link': None},  # inka kadhu 
+    'Data Structures': {'classes': 28, 'link': None},
     'Problem of the Day': {'classes': None, 'link': 'https://leetcode.com/problemset/'},
     'Implementation "projects"': {'classes': None, 'link': 'C:\\Users\\prave\\Desktop\\project_space'}
 }
-
 
 working_day_timetable = {
     "05:30": "AWS / Data Scientist",
@@ -30,7 +28,6 @@ working_day_timetable = {
     "23:00": "End of Day"
 }
 
-
 sunday_timetable = {
     "05:30": "AWS / Data Scientist",
     "07:20": "DevOps / Data Structures",
@@ -39,7 +36,6 @@ sunday_timetable = {
     "20:35": "Implementation \"projects\"",
     "23:00": "End of Day"
 }
-
 
 task_data = []
 
@@ -66,7 +62,7 @@ def get_current_task(timetable):
             break
 
     if scheduled_task is None:
-        scheduled_task = list(timetable.values())[-1]  # Last task of the day
+        scheduled_task = list(timetable.values())[-1]
 
     return scheduled_task, next_task_time
 
@@ -91,7 +87,7 @@ def open_course(course):
         if courses[course]['link']:
             print(f"Opening {course} materials...")
             if course == 'Implementation "projects"':
-                os.system(f"code {courses[course]['link']}")  #  folder in VS Code vasthade
+                os.system(f"code {courses[course]['link']}")
             else:
                 webbrowser.open(courses[course]['link'])
         else:
@@ -142,14 +138,21 @@ def save_to_excel():
     return filename
 
 def send_email(attachment_path):
-    sender_email = "your_email@gmail.com"  # Replace with chinnodu email
-    sender_password = "your_password"  # Replace with chinnodu email password
+    sender_email = os.environ.get('GMAIL_USER')
+    sender_password = os.environ.get('GMAIL_PASSWORD')
     receiver_email = "praveenmacha777@gmail.com"
+
+    if not sender_email or not sender_password:
+        print("Email credentials not set. Please set GMAIL_USER and GMAIL_PASSWORD environment variables.")
+        return
 
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = receiver_email
     msg['Subject'] = f"Task Data - {datetime.datetime.now().strftime('%Y-%m-%d')}"
+
+    body = "Please find attached the task data for today."
+    msg.attach(MIMEText(body, 'plain'))
 
     with open(attachment_path, "rb") as attachment:
         part = MIMEBase("application", "octet-stream")
@@ -170,17 +173,16 @@ def send_email(attachment_path):
         print("Email sent successfully!")
     except Exception as e:
         print(f"Failed to send email. Error: {str(e)}")
+        print("Please check your email credentials and internet connection.")
 
 def main():
     start_time = clock_in()
     
-    # Greeting
     greeting = get_greeting()
     name = random.choice(names)
     print(f"{greeting}, {name}!")
 
-    # Determine the day and select the appropriate timetable
-    if datetime.datetime.now().weekday() == 6:  # Sunday
+    if datetime.datetime.now().weekday() == 6:
         timetable = sunday_timetable
         print("It's Sunday. Using the Sunday timetable.")
     else:
@@ -240,7 +242,7 @@ def main():
 
     navigate_courses(start_time)
 
-    # naku ee Excel email lo vasthade 
+    # Save data to Excel and send email
     excel_file = save_to_excel()
     send_email(excel_file)
 
