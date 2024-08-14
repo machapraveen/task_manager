@@ -9,17 +9,20 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
 
+# List of names for greeting
 names = ['Rohitha', 'Chinnodu', 'Junia', 'Swathi']
 
+# Course information
 courses = {
     'AWS': {'classes': 18, 'link': 'https://learn.internshipstudio.com/learn/home/aws/section/307634/lesson/1875569'},
-    'Data Scientist': {'classes': 300, 'link': None},
+    'Data Scientist': {'classes': 300, 'link': None},  # Add link when available
     'DevOps': {'classes': 25, 'link': 'https://learn.internshipstudio.com/learn/home/DevOps/section/471668/lesson/2960749'},
-    'Data Structures': {'classes': 28, 'link': None},
+    'Data Structures': {'classes': 28, 'link': None},  # Add link when available
     'Problem of the Day': {'classes': None, 'link': 'https://leetcode.com/problemset/'},
     'Implementation "projects"': {'classes': None, 'link': 'C:\\Users\\prave\\Desktop\\project_space'}
 }
 
+# Timetable for working days (Monday to Saturday)
 working_day_timetable = {
     "05:30": "AWS / Data Scientist",
     "18:10": "DevOps / Data Structures",
@@ -28,6 +31,7 @@ working_day_timetable = {
     "23:00": "End of Day"
 }
 
+# Timetable for Sundays
 sunday_timetable = {
     "05:30": "AWS / Data Scientist",
     "07:20": "DevOps / Data Structures",
@@ -37,6 +41,7 @@ sunday_timetable = {
     "23:00": "End of Day"
 }
 
+# Data tracking
 task_data = []
 
 def get_greeting():
@@ -62,7 +67,7 @@ def get_current_task(timetable):
             break
 
     if scheduled_task is None:
-        scheduled_task = list(timetable.values())[-1]
+        scheduled_task = list(timetable.values())[-1]  # Last task of the day
 
     return scheduled_task, next_task_time
 
@@ -87,7 +92,7 @@ def open_course(course):
         if courses[course]['link']:
             print(f"Opening {course} materials...")
             if course == 'Implementation "projects"':
-                os.system(f"code {courses[course]['link']}")
+                os.system(f"code {courses[course]['link']}")  # Opens project folder in VS Code
             else:
                 webbrowser.open(courses[course]['link'])
         else:
@@ -138,13 +143,9 @@ def save_to_excel():
     return filename
 
 def send_email(attachment_path):
-    sender_email = os.environ.get('GMAIL_USER')
-    sender_password = os.environ.get('GMAIL_PASSWORD')
+    sender_email = input("Enter your Gmail address: ")
+    sender_password = input("Enter your App Password: ")
     receiver_email = "praveenmacha777@gmail.com"
-
-    if not sender_email or not sender_password:
-        print("Email credentials not set. Please set GMAIL_USER and GMAIL_PASSWORD environment variables.")
-        return
 
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -157,7 +158,7 @@ def send_email(attachment_path):
     with open(attachment_path, "rb") as attachment:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(attachment.read())
-    
+
     encoders.encode_base64(part)
     part.add_header(
         "Content-Disposition",
@@ -166,23 +167,42 @@ def send_email(attachment_path):
     msg.attach(part)
 
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-        print("Email sent successfully!")
-    except Exception as e:
-        print(f"Failed to send email. Error: {str(e)}")
-        print("Please check your email credentials and internet connection.")
+        print("Attempting to connect to SMTP server...")
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        print("Connected to SMTP server.")
 
+        print("Starting TLS connection...")
+        server.starttls()
+        print("TLS connection established.")
+
+        print("Attempting to log in...")
+        server.login(sender_email, sender_password)
+        print("Login successful.")
+
+        print("Sending email...")
+        server.send_message(msg)
+        print("Email sent successfully!")
+
+        server.quit()
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"Authentication failed. Error: {str(e)}")
+        print("Please check your email and App Password.")
+    except smtplib.SMTPException as e:
+        print(f"SMTP error occurred: {str(e)}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+
+    print("Email sending process completed.")
 def main():
     start_time = clock_in()
-    
+
+    # Greeting
     greeting = get_greeting()
     name = random.choice(names)
     print(f"{greeting}, {name}!")
 
-    if datetime.datetime.now().weekday() == 6:
+    # Determine the day and select the appropriate timetable
+    if datetime.datetime.now().weekday() == 6:  # Sunday
         timetable = sunday_timetable
         print("It's Sunday. Using the Sunday timetable.")
     else:
@@ -193,7 +213,7 @@ def main():
 
     print(f"Current time: {datetime.datetime.now().strftime('%H:%M')}")
     print(f"{name}, you have {current_task} scheduled now.")
-    
+
     if next_task_time:
         print(f"Your next task starts at {next_task_time.strftime('%H:%M')}.")
 
